@@ -59,12 +59,33 @@ public class UserServlet extends HttpServlet {
                 case "delete":
                     deleteUser(request, response);
                     break;
+                case "search":
+                    searchUser(request,response);
                 default:
                     listUser(request, response);
                     break;
             }
         } catch (SQLException ex) {
             throw new ServletException(ex);
+        }
+    }
+
+    private void searchUser(HttpServletRequest request, HttpServletResponse response) {
+        String country = request.getParameter("country");
+        List<User> userList = null;
+        try {
+            if (country != null && !country.trim().isEmpty()) {
+                userList = userDAO.searchByCountry(country);
+            } else {
+                // Nếu người dùng không nhập gì mà ấn Search, trả về toàn bộ danh sách
+                userList = userDAO.selectAllUsers();
+            }
+            request.setAttribute("listUser", userList);
+            request.setAttribute("country", country);
+            RequestDispatcher dispatcher = request.getRequestDispatcher("user/list.jsp");
+            dispatcher.forward(request, response);
+        } catch (ServletException | IOException | SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 

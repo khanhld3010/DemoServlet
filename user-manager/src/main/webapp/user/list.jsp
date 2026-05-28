@@ -14,6 +14,13 @@
 <body>
 <center>
     <h1>User Management</h1>
+
+    <form action="${pageContext.request.contextPath}/users" method="get">
+        <input type="hidden" name="action" value="search">
+        <input type="text" name="country" placeholder="Search users..." size="30">
+        <button type="submit">Search</button>
+    </form>
+
     <h2>
         <a href="${pageContext.request.contextPath}/users?action=create">Add New User</a>
     </h2>
