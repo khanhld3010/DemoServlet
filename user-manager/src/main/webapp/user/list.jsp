@@ -15,7 +15,7 @@
 <center>
     <h1>User Management</h1>
 
-    <form action="${pageContext.request.contextPath}/users" method="get">
+    <form action="${pageContext.request.contextPath}/users" method="post">
         <input type="hidden" name="action" value="search">
         <input type="text" name="country" placeholder="Search users..." size="30">
         <button type="submit">Search</button>
