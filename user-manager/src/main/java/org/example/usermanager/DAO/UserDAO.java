@@ -26,6 +26,10 @@ public class UserDAO implements IUserDAO {
     private static final String SQL_TABLE_CREATE = "CREATE TABLE EMPLOYEE " + "(" + " ID INT AUTO_INCREMENT," + " NAME varchar(100) NOT NULL," + " SALARY numeric(15, 2) NOT NULL," + " CREATED_DATE timestamp," + " PRIMARY KEY (ID)" + ")";
     private static final String SQL_TABLE_DROP = "DROP TABLE IF EXISTS EMPLOYEE";
 
+    private static final String SQL_UPDATE_USER = "CALL update_user_by_id(?, ?, ?, ?)";
+    private static final String SQL_DELETE_USER = "CALL delete_user_by_id(?)";
+
+
     public UserDAO() {
     }
 
@@ -107,7 +111,8 @@ public class UserDAO implements IUserDAO {
     @Override
     public boolean updateUser(User user) throws SQLException {
         boolean rowUpdated;
-        try (Connection connection = getConnection(); PreparedStatement statement = connection.prepareStatement(UPDATE_USERS_SQL)) {
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(UPDATE_USERS_SQL)) {
             statement.setString(1, user.getName());
             statement.setString(2, user.getEmail());
             statement.setString(3, user.getCountry());
@@ -289,9 +294,34 @@ public class UserDAO implements IUserDAO {
             preparedStatementUpdate.execute();
             connection.commit();
             connection.setAutoCommit(true);
-        }catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void updateUserProcedure(User user) throws SQLException {
+        try (Connection connection = getConnection();
+             CallableStatement callableStatement = connection.prepareCall(SQL_UPDATE_USER)) {
+            callableStatement.setInt(1, user.getId());
+            callableStatement.setString(2, user.getName());
+            callableStatement.setString(3, user.getEmail());
+            callableStatement.setString(4, user.getCountry());
+            System.out.println(callableStatement);
+            callableStatement.executeUpdate();
+
+        }
+    }
+
+    @Override
+    public void deleteUsersProcedure(int id) throws SQLException {
+        try (Connection connection = getConnection();
+             CallableStatement callableStatement = connection.prepareCall(SQL_DELETE_USER)) {
+            callableStatement.setInt(1, id);
+            int rowsDeleted = callableStatement.executeUpdate();
+            System.out.println("SQL Executed: " + callableStatement);
+            System.out.println("Số lượng user đã bị xóa: " + rowsDeleted);
         }
     }
 

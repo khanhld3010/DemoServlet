@@ -27,4 +27,10 @@ public interface IUserDAO {
     public void insertUpdateWithoutTransaction() throws SQLException;
 
     public void insertUpdateUseTransaction() throws SQLException;
+
+    public void updateUserProcedure(User user) throws SQLException;
+
+    public void deleteUsersProcedure(int id) throws SQLException;
+
+
 }
