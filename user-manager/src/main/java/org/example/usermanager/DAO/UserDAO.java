@@ -2,7 +2,9 @@ package org.example.usermanager.DAO;
 
 import org.example.usermanager.model.User;
 
+import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +20,11 @@ public class UserDAO implements IUserDAO {
     private static final String DELETE_USERS_SQL = "delete from users where id = ?;";
     private static final String UPDATE_USERS_SQL = "update users set name = ?,email= ?, country =? where id = ?;";
     private static final String SELECT_USER_BY_COUNTRY = "SELECT * FROM users u WHERE country = ? ";
+
+    private static final String SQL_INSERT = "INSERT INTO EMPLOYEE (NAME, SALARY, CREATED_DATE) VALUES (?,?,?)";
+    private static final String SQL_UPDATE = "UPDATE EMPLOYEE SET SALARY=? WHERE NAME=?";
+    private static final String SQL_TABLE_CREATE = "CREATE TABLE EMPLOYEE " + "(" + " ID INT AUTO_INCREMENT," + " NAME varchar(100) NOT NULL," + " SALARY numeric(15, 2) NOT NULL," + " CREATED_DATE timestamp," + " PRIMARY KEY (ID)" + ")";
+    private static final String SQL_TABLE_DROP = "DROP TABLE IF EXISTS EMPLOYEE";
 
     public UserDAO() {
     }
@@ -52,8 +59,7 @@ public class UserDAO implements IUserDAO {
     @Override
     public User selectUser(int id) {
         User user = null;
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_USER_BY_ID)) {
+        try (Connection connection = getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(SELECT_USER_BY_ID)) {
             preparedStatement.setInt(1, id);
             System.out.println(preparedStatement);
             ResultSet rs = preparedStatement.executeQuery();
@@ -72,8 +78,7 @@ public class UserDAO implements IUserDAO {
     @Override
     public List<User> selectAllUsers() {
         List<User> users = new ArrayList<>();
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_USERS)) {
+        try (Connection connection = getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_USERS)) {
             System.out.println(preparedStatement);
             ResultSet rs = preparedStatement.executeQuery();
             while (rs.next()) {
@@ -115,8 +120,7 @@ public class UserDAO implements IUserDAO {
     @Override
     public List<User> searchByCountry(String country) throws SQLException {
         List<User> users = new ArrayList<>();
-        try (Connection connection = getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_USER_BY_COUNTRY)) {
+        try (Connection connection = getConnection(); PreparedStatement preparedStatement = connection.prepareStatement(SELECT_USER_BY_COUNTRY)) {
             preparedStatement.setString(1, country);
             try (ResultSet rs = preparedStatement.executeQuery()) {
                 while (rs.next()) {
@@ -136,8 +140,7 @@ public class UserDAO implements IUserDAO {
     public User getUserById(int id) throws SQLException {
         User user = null;
         String procedureGetUser = "CALL get_user_by_id(?)";
-        try (Connection connection = getConnection();
-             CallableStatement callableStatement = connection.prepareCall(procedureGetUser)) {
+        try (Connection connection = getConnection(); CallableStatement callableStatement = connection.prepareCall(procedureGetUser)) {
             callableStatement.setInt(1, id);
             ResultSet rs = callableStatement.executeQuery();
             while (rs.next()) {
@@ -153,8 +156,7 @@ public class UserDAO implements IUserDAO {
     @Override
     public void insertUserStore(User user) throws SQLException {
         String query = "{CALL insert_user(?,?,?)}";
-        try (Connection connection = getConnection();
-             CallableStatement callableStatement = connection.prepareCall(query)) {
+        try (Connection connection = getConnection(); CallableStatement callableStatement = connection.prepareCall(query)) {
             callableStatement.setString(1, user.getName());
             callableStatement.setString(2, user.getEmail());
             callableStatement.setString(3, user.getCountry());
@@ -191,14 +193,12 @@ public class UserDAO implements IUserDAO {
             rs = pstmt.getGeneratedKeys();
 
             int userId = 0;
-            if (rs.next())
-                userId = rs.getInt(1);
+            if (rs.next()) userId = rs.getInt(1);
 
             // in case the insert operation successes, assign permision to user
             if (rowAffected == 1) {
                 // assign permision to user
-                String sqlPivot = "INSERT INTO user_permision(user_id,permision_id) "
-                        + "VALUES(?,?)";
+                String sqlPivot = "INSERT INTO user_permision(user_id,permision_id) " + "VALUES(?,?)";
                 pstmtAssignment = conn.prepareStatement(sqlPivot);
 
                 for (int permisionId : permissions) {
@@ -214,8 +214,7 @@ public class UserDAO implements IUserDAO {
         } catch (SQLException ex) {
             // roll back the transaction
             try {
-                if (conn != null)
-                    conn.rollback();
+                if (conn != null) conn.rollback();
             } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
@@ -230,6 +229,37 @@ public class UserDAO implements IUserDAO {
                 System.out.println(e.getMessage());
             }
         }
+    }
+
+    @Override
+    public void insertUpdateWithoutTransaction() throws SQLException {
+        try (Connection connection = getConnection(); Statement statement = connection.createStatement();
+             PreparedStatement preparedStatementInsert = connection.prepareStatement(SQL_INSERT);
+             PreparedStatement preparedStatementUpdate = connection.prepareStatement(SQL_UPDATE)) {
+            statement.execute(SQL_TABLE_DROP);
+            statement.execute(SQL_TABLE_CREATE);
+            // Run list of insert commands
+            preparedStatementInsert.setString(1, "Quynh");
+            preparedStatementInsert.setBigDecimal(2, new BigDecimal(1000));
+            preparedStatementInsert.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+            preparedStatementInsert.execute();
+
+            preparedStatementInsert.setString(1, "Ngan");
+            preparedStatementInsert.setBigDecimal(2, new BigDecimal(20));
+            preparedStatementInsert.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+            preparedStatementInsert.execute();
+
+            // Run list of update commands
+            // below line caused error, test transaction
+            // org.postgresql.util.PSQLException: No value specified for parameter 1.
+            preparedStatementUpdate.setBigDecimal(1, new BigDecimal(999.99));
+            //psUpdate.setBigDecimal(1, new BigDecimal(999.99));
+            preparedStatementUpdate.setString(2, "Quynh");
+            preparedStatementUpdate.execute();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void printSQLException(SQLException ex) {

@@ -62,6 +62,9 @@ public class UserServlet extends HttpServlet {
                 case "delete":
                     deleteUser(request, response);
                     break;
+                case "test-without-tran":
+                    testWithoutTran(request, response);
+                    break;
                 default:
                     listUser(request, response);
                     break;
@@ -69,6 +72,10 @@ public class UserServlet extends HttpServlet {
         } catch (SQLException ex) {
             throw new ServletException(ex);
         }
+    }
+
+    private void testWithoutTran(HttpServletRequest request, HttpServletResponse response) throws SQLException {
+        userDAO.insertUpdateWithoutTransaction();
     }
 
     private void searchUser(HttpServletRequest request, HttpServletResponse response) {
@@ -124,20 +131,20 @@ public class UserServlet extends HttpServlet {
         String delete = request.getParameter("delete");
         String view = request.getParameter("view");
         List<Integer> permissions = new ArrayList<>();
-        if (add != null){
+        if (add != null) {
             permissions.add(1);
         }
-        if (edit != null){
+        if (edit != null) {
             permissions.add(2);
         }
-        if (delete != null){
+        if (delete != null) {
             permissions.add(3);
         }
-        if (view != null){
+        if (view != null) {
             permissions.add(4);
         }
 
-        User newUser = new User(0,name, email, country);
+        User newUser = new User(0, name, email, country);
         //userDAO.insertUser(newUser);
         userDAO.addUserTransaction(newUser, permissions);
         RequestDispatcher dispatcher = request.getRequestDispatcher("user/create.jsp");
